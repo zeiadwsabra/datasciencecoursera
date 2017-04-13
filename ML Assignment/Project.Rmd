@@ -1,0 +1,128 @@
+---
+title: "Machine Learning Week 4 Assignment"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+##Data 
+
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+
+
+
+## Libraries
+```{r,message=FALSE, warning=FALSE}
+library(caret)
+library(mlbench)
+library(randomForest)
+```
+
+## Loading daata
+
+```{r, cache=TRUE}
+indata <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+```
+##Data Preparation
+
+### Clearning up the data and Feature Selection
+```{r, cache=TRUE}
+##filtering columns containing only Na
+indata <- indata[, colSums(is.na(testing)) != nrow(testing)]
+testing <- testing[, colSums(is.na(testing)) != nrow(testing)]
+##Removing unnecessary columns 
+indata <- indata[,-(1:7)]
+
+#Reducing pair-wise correlation.
+correlationMatrix <- cor(indata[, -dim(indata)[2]])
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.75)
+indata <- indata[, -highlyCorrelated]
+
+```
+
+###Training Validation split
+We split the data a 70%-30% split to training and validation respectively.
+```{r, cache=TRUE}
+#Spliting data into training and validation 
+set.seed(123)
+inTrain <- createDataPartition(y=indata$classe, p=0.7, list=F)
+training <- indata[inTrain, ]
+validation <- indata[-inTrain, ]
+```
+
+###Training the Model
+
+```{r, cache=TRUE}
+#Using Random Forest 
+#Use 3-fold CV to select best  parameters
+control <- trainControl(method="cv", number=3, verboseIter=F)
+model_rf <- train(classe~., data=training, method="rf",  trControl=control)
+
+
+model_rf$finalModel
+```
+
+
+###Tesing the model on the validation set.
+```{r, cache=TRUE}
+predictions <- predict(model_rf, newdata=validation)
+
+confusionMatrix(validation$classe, predictions)
+
+```
+
+The accuracy is 99%, thus the expected for the out-of-sample error is 1%.
+
+
+###Ranking Important Features
+
+
+```{r}
+importance <- varImp(model_rf, scale=FALSE)
+# summarize importance
+print(importance)
+# plot importance
+plot(importance)
+```
+
+##Predicting Test set
+
+```{r}
+predictions <- predict(model_rf, testing)
+predictions
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
