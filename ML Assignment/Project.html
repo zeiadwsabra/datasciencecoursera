@@ -145,21 +145,22 @@ testing &lt;- read.csv(&quot;pml-testing.csv&quot;)</code></pre>
 <div id="data-preparation" class="section level2">
 <h2>Data Preparation</h2>
 <div id="clearning-up-the-data-and-feature-selection" class="section level3">
-<h3>Clearning up the data and Feature selection</h3>
+<h3>Clearning up the data and Feature Selection</h3>
 <pre class="r"><code>##filtering columns containing only Na
 indata &lt;- indata[, colSums(is.na(testing)) != nrow(testing)]
 testing &lt;- testing[, colSums(is.na(testing)) != nrow(testing)]
-##Removing unnessary columns 
+##Removing unnecessary columns 
 indata &lt;- indata[,-(1:7)]
 
 #Reducing pair-wise correlation.
 correlationMatrix &lt;- cor(indata[, -dim(indata)[2]])
 highlyCorrelated &lt;- findCorrelation(correlationMatrix, cutoff=0.75)
 indata &lt;- indata[, -highlyCorrelated]</code></pre>
+<p>After removing highly correlated variables, we now have 31 features to train our models.</p>
 </div>
 <div id="training-validation-split" class="section level3">
 <h3>Training Validation split</h3>
-<p>We split the data a 70%-30% split to training and validation respectively.</p>
+<p>We split the data a 70%-30% split to training and validation respectively to get the expected out-of-sample error.</p>
 <pre class="r"><code>#Spliting data into training and validation 
 set.seed(123)
 inTrain &lt;- createDataPartition(y=indata$classe, p=0.7, list=F)
@@ -168,6 +169,7 @@ validation &lt;- indata[-inTrain, ]</code></pre>
 </div>
 <div id="training-the-model" class="section level3">
 <h3>Training the Model</h3>
+<p>Training a random forest model with all of the features.</p>
 <pre class="r"><code>#Using Random Forest 
 #Use 3-fold CV to select best  parameters
 control &lt;- trainControl(method=&quot;cv&quot;, number=3, verboseIter=F)
@@ -227,7 +229,7 @@ confusionMatrix(validation$classe, predictions)</code></pre>
 ## Detection Rate         0.2841   0.1922   0.1703   0.1601   0.1833
 ## Detection Prevalence   0.2845   0.1935   0.1743   0.1638   0.1839
 ## Balanced Accuracy      0.9977   0.9905   0.9863   0.9936   0.9992</code></pre>
-<p>The accuracy is 99%, thus the expected for the out-of-sample error is 1%.</p>
+<p>The accuracy on the validation set is 99%, thus the expected for the out-of-sample error is 1%.</p>
 </div>
 <div id="ranking-important-features" class="section level3">
 <h3>Ranking Important Features</h3>
